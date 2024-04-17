@@ -20,16 +20,18 @@ const (
 )
 
 var (
-	num_req int
+	numReq  int
 	address string
 	sum     uint
+	hotk    uint
 )
 var rdb *redis.Client
 var logger *log.Logger
 
 func init() {
 	flag.StringVar(&address, "server", "127.0.0.1:6379", "redis server address")
-	flag.IntVar(&num_req, "requests", 1000, "how many transaction each goroutine execute")
+	flag.IntVar(&numReq, "requests", 1000, "how many transaction each goroutine execute")
+	flag.UintVar(&hotk, "hotkey", 0, "enable hot key")
 	flag.Parse()
 
 	logger = log.Default()
@@ -52,14 +54,14 @@ func init() {
 }
 
 func main() {
-	logger.Printf("start benchmark %d goroutines * %d requests", num_routine, num_req)
+	logger.Printf("start benchmark %d goroutines * %d requests", num_routine, numReq)
 	start := time.Now()
 	wg := sync.WaitGroup{}
 	wg.Add(num_routine)
 	for i := 0; i < num_routine; i++ {
 		go func() {
 			ctx := context.Background()
-			for r := 0; r < num_req; r++ {
+			for r := 0; r < numReq; r++ {
 				i := uint(rand.Uint32()) % max_key
 				transfer(ctx, i)
 			}
@@ -69,15 +71,25 @@ func main() {
 	wg.Wait()
 	cost := time.Since(start)
 
-	totalReq := num_req * num_routine
-	qps := float64(totalReq) / cost.Seconds()
-	logger.Printf("finished %d request cost %v: QPS=%2f", totalReq, cost, qps)
+	totalReq := numReq * num_routine
+	tps := float64(totalReq) / cost.Seconds()
+	logger.Printf("finished %d request cost %v: TPS=%2f", totalReq, cost, tps)
 
-	// check_sum()
+	check_sum()
 }
 
 func key(i uint) string {
+	if i >= max_key {
+		panic("invalid key")
+	}
 	return fmt.Sprintf("key%d", i)
+}
+
+func hotkey(i uint) string {
+	if i >= hotk {
+		panic("invalid hot key")
+	}
+	return fmt.Sprintf("hot_key%d", i)
 }
 
 func assert_ok(err error) {
@@ -103,6 +115,10 @@ func transfer(ctx context.Context, i uint) {
 				rcv := (2*i + uint(r)) % max_key
 				pipe.Incr(ctx, key(rcv))
 			}
+			var h uint
+			for h = 0; h < hotk; h++ {
+				pipe.Incr(ctx, hotkey(h))
+			}
 			return nil
 		})
 		return err
@@ -122,6 +138,6 @@ func check_sum() {
 		sum2 += uint(balance)
 	}
 	if sum2 != sum {
-		logger.Fatalf("check_sum failed %d != %d", sum2, sum)
+		logger.Printf("check_sum failed %d != %d", sum2, sum)
 	}
 }
