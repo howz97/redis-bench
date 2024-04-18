@@ -20,16 +20,16 @@ const (
 )
 
 var (
-	numReq  int
-	address string
-	sum     uint
-	hotk    uint
+	numReq int
+	server string
+	hotk   uint
 )
+var sum uint
 var rdb *redis.Client
 var logger *log.Logger
 
 func init() {
-	flag.StringVar(&address, "server", "127.0.0.1:6379", "redis server address")
+	flag.StringVar(&server, "server", "127.0.0.1:6379", "redis server address")
 	flag.IntVar(&numReq, "requests", 1000, "how many transaction each goroutine execute")
 	flag.UintVar(&hotk, "hotkey", 0, "enable hot key")
 	flag.Parse()
@@ -37,7 +37,7 @@ func init() {
 	logger = log.Default()
 
 	rdb = redis.NewClient(&redis.Options{
-		Addr: address,
+		Addr: server,
 	})
 
 	ctx := context.Background()
