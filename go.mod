@@ -1,4 +1,4 @@
-module github.com/howz97/redis-txn-bench
+module github.com/howz97/redis-bench
 
 go 1.21.5
 
