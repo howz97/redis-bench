@@ -7,6 +7,11 @@ import (
 	"strconv"
 )
 
+const lua = `
+local n = redis.call('HGET', KEYS[1], KEYS[2])
+return redis.call('GET', 'bar' .. string.format("%d", n))
+`
+
 var (
 	shards uint
 )
@@ -29,10 +34,6 @@ func eval_prepare() {
 		assert_ok(err)
 	}
 	pipe.Exec(ctx)
-	lua := `
-	local n = redis.call('HGET', KEYS[1], KEYS[2])
-	return redis.call('GET', 'bar' .. string.format("%.f", n))
-	`
 	var err error
 	sha, err = rdb.ScriptLoad(ctx, lua).Result()
 	assert_ok(err)
@@ -41,8 +42,11 @@ func eval_prepare() {
 func eval_test(ctx context.Context) {
 	i := rand.Intn(int(maxKey))
 	key := eval_key(uint(i))
-	val, err := rdb.EvalSha(ctx, sha, []string{key, strconv.Itoa(i)}).Result()
-	assert_ok(err)
+	field := strconv.Itoa(i)
+	val, err := rdb.EvalSha(ctx, sha, []string{key, field}).Result()
+	if err != nil {
+		panic(fmt.Sprintf("EvalSha %s/%s: %v", key, field, err))
+	}
 	exp := fmt.Sprintf("BAR%d", i)
 	if val != exp {
 		panic(fmt.Sprintf("expected %s, but got %s", exp, val))
