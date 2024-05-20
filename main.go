@@ -25,6 +25,9 @@ func init() {
 	flag.StringVar(&test, "test", "eval", "test redis commands")
 	flag.IntVar(&numRoutine, "routine", 16, "number of goroutine")
 	flag.UintVar(&maxKey, "maxkey", 0, "max key range")
+
+	flag.UintVar(&shards, "shards", 128, "hset shards")
+	flag.UintVar(&hotk, "hotkey", 0, "enable hot key")
 	flag.Parse()
 
 	logger = log.Default()

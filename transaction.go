@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"math/rand"
 	"strconv"
@@ -19,8 +18,6 @@ const receiver = 5
 var sum uint
 
 func txn_prepare() {
-	flag.UintVar(&hotk, "hotkey", 0, "enable hot key")
-
 	ctx := context.Background()
 	logger.Println("initializing key values")
 	pipe := rdb.Pipeline()
