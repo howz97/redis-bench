@@ -4,13 +4,9 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"os"
 	"strconv"
 )
-
-const lua = `
-local n = redis.call('HGET', KEYS[1], KEYS[2])
-return redis.call('GET', 'bar' .. string.format("%d", n))
-`
 
 var (
 	shards uint
@@ -34,8 +30,9 @@ func eval_prepare() {
 		assert_ok(err)
 	}
 	pipe.Exec(ctx)
-	var err error
-	sha, err = rdb.ScriptLoad(ctx, lua).Result()
+	lua, err := os.ReadFile(luaFile)
+	assert_ok(err)
+	sha, err = rdb.ScriptLoad(ctx, string(lua)).Result()
 	assert_ok(err)
 }
 
