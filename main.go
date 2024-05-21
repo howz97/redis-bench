@@ -14,7 +14,7 @@ var server string
 var numReq int
 var test string
 var numRoutine int
-var maxKey uint
+var maxKey uint64
 var luaFile string
 
 var rdb *redis.Client
@@ -25,10 +25,10 @@ func init() {
 	flag.IntVar(&numReq, "requests", 1000, "how many requests to execute")
 	flag.StringVar(&test, "test", "eval", "test redis commands")
 	flag.IntVar(&numRoutine, "routine", 16, "number of goroutine")
-	flag.UintVar(&maxKey, "maxkey", 0, "max key range")
+	flag.Uint64Var(&maxKey, "maxkey", 0, "max key range")
 	flag.StringVar(&luaFile, "lua-file", "./lookup.lua", "lua file path")
 
-	flag.UintVar(&shards, "shards", 128, "hset shards")
+	flag.Uint64Var(&shards, "shards", 128, "hset shards")
 	flag.UintVar(&hotk, "hotkey", 0, "enable hot key")
 	flag.Parse()
 
@@ -46,7 +46,7 @@ func assert_ok(err error) {
 
 func main() {
 	if maxKey == 0 {
-		maxKey = uint(numRoutine)
+		maxKey = uint64(numRoutine)
 	}
 	var f func(ctx context.Context)
 	switch test {
